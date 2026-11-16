@@ -48,12 +48,11 @@ function parse()
         end
     end
 
-    -- Try executing youtube-dl command
-    local file = execute_command('youtube-dl -j --flat-playlist "' .. url .. '"')
+    -- Try executing yt-dlp command with combined mp4 format preference
+    local file = execute_command('yt-dlp -f "bv+ba/b" -S "res,fps" -j --flat-playlist "' .. url .. '"')
     if not file then
-        -- If youtube-dl fails, try yt-dlp as a fallback
-        file = assert(execute_command('yt-dlp -j --flat-playlist "' .. url .. '"'),
-            "Both youtube-dl and yt-dlp failed to execute.")
+        file = assert(execute_command('youtube-dl -f "bv+ba/b" -j --flat-playlist "' .. url .. '"'),
+            "Both yt-dlp and youtube-dl failed to execute.")
     end
 
 
@@ -124,12 +123,25 @@ function parse()
                 thumbnail = json.thumbnails[#json.thumbnails].url
             end
 
+            local user_agent = nil
+            if json.http_headers and json.http_headers["User-Agent"] then
+                user_agent = json.http_headers["user_agent"]
+            end
+
             jsoncopy = {}
             for k in pairs(json) do
                 jsoncopy[k] = tostring(json[k])
             end
 
             json = jsoncopy
+
+            local vlc_options = { "start-time=" .. (json.start_time or 0) }
+            if user_agent then
+                table.insert(vlc_options, "http-user-agent=" .. user_agent)
+            end
+            if not out_includes_audio and audiourl and outurl ~= audiourl then
+                table.insert(vlc_options, "input-slave=" .. audiourl)
+            end
 
             item = {
                 path        = outurl,
@@ -162,12 +174,8 @@ function parse()
                 --actors
 
                 meta        = json,
-                options     = { "start-time=" .. (json.start_time or 0) },
+                options     = vlc_options,
             }
-
-            if not out_includes_audio and audiourl and outurl ~= audiourl then
-                item['options'][':input-slave'] = ":input-slave=" .. audiourl;
-            end
 
             table.insert(tracks, item)
         end
