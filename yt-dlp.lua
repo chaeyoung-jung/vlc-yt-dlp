@@ -50,9 +50,9 @@ function parse()
     end
 
     -- Try executing yt-dlp command with combined mp4 format preference
-    local file = execute_command('yt-dlp -f "bv+ba/b" -S "res,fps" -j --flat-playlist "' .. url .. '"')
+    local file = execute_command('yt-dlp --extractor-args "youtube:player_client=android,web" -f "bv+ba/b" -S "res,fps" -j --flat-playlist "' .. url .. '"')
     if not file then
-        file = assert(execute_command('youtube-dl -f "bv+ba/b" -j --flat-playlist "' .. url .. '"'),
+        file = assert(execute_command('youtube-dl --extractor-args "youtube:player_client=android,web" -f "bv+ba/b" -j --flat-playlist "' .. url .. '"'),
             "Both yt-dlp and youtube-dl failed to execute.")
     end
 
@@ -126,7 +126,7 @@ function parse()
 
             local user_agent = nil
             if json.http_headers and json.http_headers["User-Agent"] then
-                user_agent = json.http_headers["user_agent"]
+                user_agent = json.http_headers["User_Agent"]
             end
 
             jsoncopy = {}
